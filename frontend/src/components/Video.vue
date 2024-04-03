@@ -87,18 +87,31 @@ export default {
     },
     explain() {
       const imageData = this.canvas.toDataURL('image/png')
-      fetch('http://127.0.0.1:5000/explain', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ image_data: imageData }),
-      })
-      .then(response => console.log(response))
-      .catch(error => {
-        // 오류 처리
-        console.error('Error:', error);
-      });
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', 'http://127.0.0.1:5000/explain', false); // 마지막 인자를 true에서 false로 변경하여 동기적으로 요청합니다.
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.send(JSON.stringify({ image_data: imageData }));
+
+      if (xhr.status === 200) {
+        console.log(JSON.parse(xhr.responseText.replace(/'/g, '"')));
+      } else {
+        console.error('Error:', xhr.statusText);
+      }
+      //   fetch('http://127.0.0.1:5000/explain', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify({ image_data: imageData }),
+      // })
+      // .then(response => console.log(response.text()))
+      // .then(data => {
+      //   console.log('Success:', data);
+      // })
+      // .catch(error => {
+      //   // 오류 처리
+      //   console.error('Error:', error);
+      // });
 
     }
   }

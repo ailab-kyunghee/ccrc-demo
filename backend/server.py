@@ -251,7 +251,7 @@ def concept_attribution_maps(
             "./backend/utils/imagenet_labels.txt", "r"
         ) as f:  # directory of imagenet_labels.txt
             words = (f.read()).split("\n")
-        concepts.append(words[predict])
+        concepts.append([words[predict]])
         temp_weight = []
         for i, c_id in enumerate(most_important_concepts):
             cmap = cmaps[i]
@@ -348,8 +348,8 @@ def explain():
         os.makedirs("./backend/examples/0", exist_ok=True)
         with open("./backend/examples/0/image.jpg", "bw") as f:
             f.write(image_data)
-        print(infer())
-        return jsonify({"message": "Image uploaded successfully"})
+
+        return str(infer())
     else:
         return jsonify({"error": "No image data found"})
 
