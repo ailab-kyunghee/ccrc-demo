@@ -1,3 +1,9 @@
+from flask import Flask, request, jsonify
+import os
+from flask_cors import CORS
+import base64
+from io import BytesIO
+from PIL import Image
 import argparse
 import torch
 import numpy as np
@@ -13,18 +19,24 @@ import colorsys
 import pickle as pkl
 from torch.nn.functional import cosine_similarity, softmax
 
+matplotlib.use("Agg")  # 또는 다른 백엔드 선택
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Say hello")
-    parser.add_argument("--example_root", default="./examples", help="Path to D_probe")
     parser.add_argument(
-        "--heatmap_save_root", default="./heatmap", help="Path to saved img"
+        "--example_root", default="./backend/examples", help="Path to D_probe"
+    )
+    parser.add_argument(
+        "--heatmap_save_root", default="./backend/heatmap", help="Path to saved img"
     )
     parser.add_argument(
         "--num_example", default=1, type=int, help="# of examples to be used"
     )
-    parser.add_argument("--util_root", default="./utils", help="Path to utils")
-    parser.add_argument("--map_root", default="./heatmap_info", help="Path to utils")
+    parser.add_argument("--util_root", default="./backend/utils", help="Path to utils")
+    parser.add_argument(
+        "--map_root", default="./backend/heatmap_info", help="Path to utils"
+    )
 
     return parser.parse_args()
 
@@ -71,10 +83,10 @@ def concept_attribution_maps(
     gt=False,
 ):
 
-    with open(f"{args.util_root}\\RN50_ImageNet_class_shap.pkl", "rb") as f:
+    with open(f"{args.util_root}/RN50_ImageNet_class_shap.pkl", "rb") as f:
         shap_value = pkl.load(f)
 
-    with open(f"{args.util_root}\\NM_img_val_80k_tem_adp_5_layer4.pkl", "rb") as f:
+    with open(f"{args.util_root}/NM_img_val_80k_tem_adp_5_layer4.pkl", "rb") as f:
         l4_concept = pkl.load(f)
 
     c_heatmap = []
@@ -87,7 +99,6 @@ def concept_attribution_maps(
     for j, (img, label) in enumerate(tqdm(example_loader)):
         os.makedirs(f"{args.heatmap_save_root}", exist_ok=True)
         show(img[0])
-        img = img.cuda()
         feature_maps = model.extract_feature_map_4(img)
         predict = model(img)
         predict = predict[0].cpu().detach().numpy()
@@ -129,7 +140,6 @@ def concept_attribution_maps(
     for j, (img, label) in enumerate(tqdm(example_loader)):
         os.makedirs(f"{args.heatmap_save_root}", exist_ok=True)
         show(img[0])
-        img = img.cuda()
         feature_maps = model.extract_feature_map_4(img)
         feature_maps = feature_maps[0].cpu().detach().numpy()
         feature_maps = feature_maps.transpose(1, 2, 0)
@@ -179,11 +189,11 @@ def concept_attribution_maps(
         plt.clf()
         # plt.close()
 
-    with open(f"{args.map_root}\\cc_val.pkl", "wb") as f:
+    with open(f"{args.map_root}/cc_val.pkl", "wb") as f:
         pkl.dump(cc_val, f)
     cc_val = None
 
-    with open(f"{args.map_root}\\c_heatmap.pkl", "wb") as f:
+    with open(f"{args.map_root}/c_heatmap.pkl", "wb") as f:
         pkl.dump(c_heatmap, f)
     c_heatmap = None
 
@@ -191,7 +201,6 @@ def concept_attribution_maps(
     for j, (img, label) in enumerate(tqdm(example_loader)):
         os.makedirs(f"{args.heatmap_save_root}", exist_ok=True)
         show(img[0])
-        img = img.cuda()
         feature_maps = model.extract_feature_map_4(img)
         predict = model(img)
         predict = predict[0].cpu().detach().numpy()
@@ -219,7 +228,7 @@ def concept_attribution_maps(
         plt.savefig(f"{args.heatmap_save_root}/sample_att.jpg")
         plt.clf()
 
-    with open(f"{args.map_root}\\sc_idx.pkl", "wb") as f:
+    with open(f"{args.map_root}/sc_idx.pkl", "wb") as f:
         pkl.dump(sc_idx, f)
     sc_idx = None
 
@@ -227,7 +236,6 @@ def concept_attribution_maps(
     for j, (img, label) in enumerate(tqdm(example_loader)):
         os.makedirs(f"{args.heatmap_save_root}", exist_ok=True)
         show(img[0])
-        img = img.cuda()
         feature_maps = model.extract_feature_map_4(img)
         predict = model(img)
         predict = predict[0].cpu().detach().numpy()
@@ -240,7 +248,7 @@ def concept_attribution_maps(
         most_important_concepts = np.argsort(sample_shap)[::-1][:num_top_neuron]
         overall_heatmap = np.zeros((224, 224))
         with open(
-            "./utils/imagenet_labels.txt", "r"
+            "./backend/utils/imagenet_labels.txt", "r"
         ) as f:  # directory of imagenet_labels.txt
             words = (f.read()).split("\n")
         concepts.append(words[predict])
@@ -263,10 +271,10 @@ def concept_attribution_maps(
         plt.savefig(f"{args.heatmap_save_root}/sample_ovr.jpg")
         plt.clf()
 
-    with open(f"{args.map_root}\\sc_val.pkl", "wb") as f:
+    with open(f"{args.map_root}/sc_val.pkl", "wb") as f:
         pkl.dump(sc_val, f)
     sc_val = None
-    with open(f"{args.map_root}\\s_heatmap.pkl", "wb") as f:
+    with open(f"{args.map_root}/s_heatmap.pkl", "wb") as f:
         pkl.dump(s_heatmap, f)
     s_heatmap = None
 
@@ -283,7 +291,6 @@ def infer():
 
     weights = ResNet50_Weights.DEFAULT
     model = resnet50(weights=weights)
-    model = model.cuda()
     model.eval()
     featdim = 2048
 
@@ -323,3 +330,29 @@ def infer():
         gt=False,
     )
     return concepts
+
+
+app = Flask(__name__)
+CORS(app, resources={r"/explain": {"origins": "*"}})
+
+
+@app.route("/explain", methods=["POST"])
+def explain():
+    data = request.json
+    if "image_data" in data:
+        # base64로 인코딩된 이미지 데이터를 디코딩합니다
+        image_data_base64 = data["image_data"]
+        image_data = base64.b64decode(image_data_base64.split(",")[1])
+        # 여기서 이미지 데이터를 처리하고 저장할 수 있습니다
+        # 예를 들어, 파일로 저장하거나 다른 작업을 수행할 수 있습니다
+        os.makedirs("./backend/examples/0", exist_ok=True)
+        with open("./backend/examples/0/image.jpg", "bw") as f:
+            f.write(image_data)
+        print(infer())
+        return jsonify({"message": "Image uploaded successfully"})
+    else:
+        return jsonify({"error": "No image data found"})
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
