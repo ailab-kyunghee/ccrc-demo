@@ -29,6 +29,7 @@
     <h1>Explanation</h1>
     <div class="grid-container">
       <div class="grid-item" id="ex1">
+        <h3>Neuron No.{{ concepts[1] }}</h3>
         <img :src="imageset[0]" alt="Image" />
         <img :src="imageset[1]" alt="Image" />
         <h3>{{ concepts[0] }}</h3>
@@ -36,6 +37,7 @@
       <div class="grid-item"></div>
       <div class="grid-item">
         <div id="ex2">
+          <h3>Neuron No.{{ concepts[4] }}</h3>
           <img :src="imageset[2]" alt="Image" />
           <img :src="imageset[3]" alt="Image" />
           <h3>{{ concepts[3] }}</h3>
@@ -43,6 +45,7 @@
       </div>
       <div class="grid-item">
         <div id="ex3">
+          <h3>Neuron No.{{ concepts[7] }}</h3>
           <img :src="imageset[4]" alt="Image" />
           <img :src="imageset[5]" alt="Image" />
           <h3>{{ concepts[6] }}</h3>
@@ -61,25 +64,33 @@
       </div>
       <div class="grid-item">
         <div id="ex4">
+          <h3>Neuron No.{{ concepts[10] }}</h3>
           <img :src="imageset[6]" alt="Image" />
           <img :src="imageset[7]" alt="Image" />
           <h3>{{ concepts[9] }}</h3>
         </div>
       </div>
 
-      <div id="ex5">
-        <img :src="imageset[8]" alt="Image" />
-        <img :src="imageset[9]" alt="Image" />
-        <h3>{{ concepts[12] }}</h3>
+      <div class="grid-item">
+        <div id="ex5">
+          <h3>Neuron No.{{ concepts[13] }}</h3>
+          <img :src="imageset[8]" alt="Image" />
+          <img :src="imageset[9]" alt="Image" />
+          <h3>{{ concepts[12] }}</h3>
+        </div>
       </div>
 
       <div class="grid-item">
         <button v-if="photoSrc" id="retry" @click="retry">RETRY</button>
       </div>
-      <div id="ex6">
-        <img :src="imageset[10]" alt="Image" />
-        <img :src="imageset[11]" alt="Image" />
-        <h3>{{ concepts[15] }}</h3>
+
+      <div class="grid-item">
+        <div id="ex6">
+          <h3>Neuron No.{{ concepts[16] }}</h3>
+          <img :src="imageset[10]" alt="Image" />
+          <img :src="imageset[11]" alt="Image" />
+          <h3>{{ concepts[15] }}</h3>
+        </div>
       </div>
     </div>
   </div>

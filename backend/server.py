@@ -110,6 +110,7 @@ def concept_attribution_maps(
         concepts = []
         for i, c_id in enumerate(most_important_concepts):
             cmap = cmaps[i]
+
             concepts.append(l4_concept[0][c_id])
             concepts.append(c_id)
             directory_contents = os.listdir(
