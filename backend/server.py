@@ -1,9 +1,7 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 import os
 from flask_cors import CORS
 import base64
-from io import BytesIO
-from PIL import Image
 import argparse
 import torch
 import numpy as np
@@ -17,26 +15,21 @@ import matplotlib.pyplot as plt
 import matplotlib
 import colorsys
 import pickle as pkl
-from torch.nn.functional import cosine_similarity, softmax
 
 matplotlib.use("Agg")  # 또는 다른 백엔드 선택
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Say hello")
+    parser.add_argument("--example_root", default="./examples", help="Path to D_probe")
     parser.add_argument(
-        "--example_root", default="./backend/examples", help="Path to D_probe"
-    )
-    parser.add_argument(
-        "--heatmap_save_root", default="./backend/heatmap", help="Path to saved img"
+        "--heatmap_save_root", default="./heatmap", help="Path to saved img"
     )
     parser.add_argument(
         "--num_example", default=1, type=int, help="# of examples to be used"
     )
-    parser.add_argument("--util_root", default="./backend/utils", help="Path to utils")
-    parser.add_argument(
-        "--map_root", default="./backend/heatmap_info", help="Path to utils"
-    )
+    parser.add_argument("--util_root", default="./utils", help="Path to utils")
+    parser.add_argument("--map_root", default="./heatmap_info", help="Path to utils")
 
     return parser.parse_args()
 
@@ -119,6 +112,10 @@ def concept_attribution_maps(
             cmap = cmaps[i]
             concepts.append(l4_concept[0][c_id])
             concepts.append(c_id)
+            directory_contents = os.listdir(
+                "./images/example_val_l4_top2/" + str(f"{c_id:04d}")
+            )
+            concepts.append(directory_contents)
             heatmap = feature_maps[:, :, c_id]
 
             sigma = np.percentile(feature_maps[:, :, c_id].flatten(), percentile)
@@ -133,7 +130,11 @@ def concept_attribution_maps(
                 f"{args.heatmap_save_root}/{label.item():04d}/class_attribute_n{num_top_neuron}_p{percentile}_a90/Class_att_gt{label.item():04d}_{(j):02d}.jpg"
             )
         else:
-            plt.savefig(f"{args.heatmap_save_root}/Class_att.jpg")
+            plt.savefig(
+                f"{args.heatmap_save_root}/Class_att.jpg",
+                bbox_inches="tight",
+                pad_inches=0,
+            )
         plt.clf()
 
     #### Class overall Atribute Maps ####
@@ -185,7 +186,11 @@ def concept_attribution_maps(
                 f"{args.heatmap_save_root}/{label.item():04d}/class_overall_n{num_top_neuron}_p0_a50/Class_ovr_gt{label.item():04d}_{(j%args.num_example):02d}.jpg"
             )
         else:
-            plt.savefig(f"{args.heatmap_save_root}/Class_ovr.jpg")
+            plt.savefig(
+                f"{args.heatmap_save_root}/Class_ovr.jpg",
+                bbox_inches="tight",
+                pad_inches=0,
+            )
         plt.clf()
         # plt.close()
 
@@ -220,12 +225,20 @@ def concept_attribution_maps(
             sigma = np.percentile(feature_maps[:, :, c_id].flatten(), percentile)
             concepts.append(l4_concept[0][c_id])
             concepts.append(c_id)
+            directory_contents = os.listdir(
+                "./images/example_val_l4_top2/" + str(f"{c_id:04d}")
+            )
+            concepts.append(directory_contents)
             heatmap = heatmap * np.array(heatmap > sigma, np.float32)
 
             heatmap = cv2.resize(heatmap[:, :, None], (224, 224))
             show(heatmap, cmap=cmap, alpha=0.9)
 
-        plt.savefig(f"{args.heatmap_save_root}/sample_att.jpg")
+        plt.savefig(
+            f"{args.heatmap_save_root}/sample_att.jpg",
+            bbox_inches="tight",
+            pad_inches=0,
+        )
         plt.clf()
 
     with open(f"{args.map_root}/sc_idx.pkl", "wb") as f:
@@ -248,7 +261,7 @@ def concept_attribution_maps(
         most_important_concepts = np.argsort(sample_shap)[::-1][:num_top_neuron]
         overall_heatmap = np.zeros((224, 224))
         with open(
-            "./backend/utils/imagenet_labels.txt", "r"
+            "./utils/imagenet_labels.txt", "r"
         ) as f:  # directory of imagenet_labels.txt
             words = (f.read()).split("\n")
         concepts.append([words[predict]])
@@ -268,7 +281,11 @@ def concept_attribution_maps(
         sc_val.append(temp_weight)
         show(overall_heatmap, cmap="Reds", alpha=0.5)
 
-        plt.savefig(f"{args.heatmap_save_root}/sample_ovr.jpg")
+        plt.savefig(
+            f"{args.heatmap_save_root}/sample_ovr.jpg",
+            bbox_inches="tight",
+            pad_inches=0,
+        )
         plt.clf()
 
     with open(f"{args.map_root}/sc_val.pkl", "wb") as f:
@@ -333,25 +350,48 @@ def infer():
 
 
 app = Flask(__name__)
-CORS(app, resources={r"/explain": {"origins": "*"}})
+CORS(app)
 
 
 @app.route("/explain", methods=["POST"])
 def explain():
     data = request.json
-    if "image_data" in data:
-        # base64로 인코딩된 이미지 데이터를 디코딩합니다
-        image_data_base64 = data["image_data"]
+    if "imageData" in data:
+        print("-----------------")
+        image_data_base64 = data["imageData"]
         image_data = base64.b64decode(image_data_base64.split(",")[1])
         # 여기서 이미지 데이터를 처리하고 저장할 수 있습니다
         # 예를 들어, 파일로 저장하거나 다른 작업을 수행할 수 있습니다
-        os.makedirs("./backend/examples/0", exist_ok=True)
-        with open("./backend/examples/0/image.jpg", "bw") as f:
+        os.makedirs("./examples/0", exist_ok=True)
+        with open("./examples/0/image.jpg", "bw") as f:
             f.write(image_data)
-
         return str(infer())
     else:
         return jsonify({"error": "No image data found"})
+
+
+@app.route("/images/class_att")
+def serve_class_att():
+    # 이미지 파일을 static 폴더에서 찾아서 클라이언트에게 반환
+    return send_from_directory("./heatmap/", "Class_att.jpg")
+
+
+@app.route("/images/class_ovr")
+def serve_class_ovr():
+    # 이미지 파일을 static 폴더에서 찾아서 클라이언트에게 반환
+    return send_from_directory("./heatmap/", "Class_ovr.jpg")
+
+
+@app.route("/images/sample_att")
+def serve_sample_att():
+    # 이미지 파일을 static 폴더에서 찾아서 클라이언트에게 반환
+    return send_from_directory("./heatmap/", "sample_att.jpg")
+
+
+@app.route("/images/sample_ovr")
+def serve_sample_ovr():
+    # 이미지 파일을 static 폴더에서 찾아서 클라이언트에게 반환
+    return send_from_directory("./heatmap/", "sample_ovr.jpg")
 
 
 if __name__ == "__main__":
