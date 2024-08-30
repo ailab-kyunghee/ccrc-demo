@@ -1,5 +1,6 @@
 <template>
   <div v-if="!explained" id="init">
+    <h1>What parts did the AI look at?</h1>
     <div id="contents">
       <div class="camera">
         <video
@@ -21,20 +22,39 @@
       <button v-if="!photoSrc" id="takephoto" @click="takePhoto">
         TAKE PHOTO
       </button>
-      <button v-else id="explain" @click="explain">EXPLAIN</button>
+      <button v-else id="explain" v-on:click.once="explain">EXPLAIN</button>
       <button v-if="photoSrc" id="retry" @click="retry">RETRY</button>
     </div>
   </div>
   <div v-else id="explained">
-    <h1>Explanation</h1>
+    <h1>What the AI looked at...</h1>
+
     <div class="grid-container">
+      <div class="grid-item">
+        <h2 class="subtitle">In general case</h2>
+      </div>
+      <div class="grid-item"></div>
+      <div class="grid-item">
+        <h2 class="subtitle">In this sample case</h2>
+      </div>
       <div class="grid-item" id="ex1">
         <h3>Neuron No.{{ concepts[1] }}</h3>
         <img :src="imageset[0]" alt="Image" />
         <img :src="imageset[1]" alt="Image" />
         <h3>{{ concepts[0] }}</h3>
       </div>
-      <div class="grid-item"></div>
+      <div class="grid-item">
+        <h2>Prediction Results</h2>
+        <h3>{{ concepts[18] }}</h3>
+      </div>
+      <div class="grid-item">
+        <div id="ex4">
+          <h3>Neuron No.{{ concepts[10] }}</h3>
+          <img :src="imageset[6]" alt="Image" />
+          <img :src="imageset[7]" alt="Image" />
+          <h3>{{ concepts[9] }}</h3>
+        </div>
+      </div>
       <div class="grid-item">
         <div id="ex2">
           <h3>Neuron No.{{ concepts[4] }}</h3>
@@ -43,31 +63,14 @@
           <h3>{{ concepts[3] }}</h3>
         </div>
       </div>
-      <div class="grid-item">
-        <div id="ex3">
-          <h3>Neuron No.{{ concepts[7] }}</h3>
-          <img :src="imageset[4]" alt="Image" />
-          <img :src="imageset[5]" alt="Image" />
-          <h3>{{ concepts[6] }}</h3>
-        </div>
-      </div>
 
-      <div class="grid-item">
+      <div class="grid-item" id="results">
         <div v-if="explained">
           <img :src="heatmaps[0]" alt="heatmap" />
-          <img :src="heatmaps[1]" alt="heatmap" />
-          <br />
           <img :src="heatmaps[2]" alt="heatmap" />
+          <br />
+          <img :src="heatmaps[1]" alt="heatmap" />
           <img :src="heatmaps[3]" alt="heatmap" />
-          <h3>{{ concepts[18] }}</h3>
-        </div>
-      </div>
-      <div class="grid-item">
-        <div id="ex4">
-          <h3>Neuron No.{{ concepts[10] }}</h3>
-          <img :src="imageset[6]" alt="Image" />
-          <img :src="imageset[7]" alt="Image" />
-          <h3>{{ concepts[9] }}</h3>
         </div>
       </div>
 
@@ -80,6 +83,14 @@
         </div>
       </div>
 
+      <div class="grid-item">
+        <div id="ex3">
+          <h3>Neuron No.{{ concepts[7] }}</h3>
+          <img :src="imageset[4]" alt="Image" />
+          <img :src="imageset[5]" alt="Image" />
+          <h3>{{ concepts[6] }}</h3>
+        </div>
+      </div>
       <div class="grid-item">
         <button v-if="photoSrc" id="retry" @click="retry">RETRY</button>
       </div>
@@ -296,4 +307,25 @@ export default {
   padding: 0px;
   text-align: center;
 }
+
+#results img {
+  height: 180px;
+}
+h1 {
+  text-align: center;
+  margin-top: 0px;
+  margin-bottom: 30px;
+}
+h2 {
+  text-align: center;
+  margin: 5px;
+}
+h3 {
+  text-align: center;
+  margin: 5px;
+}
+.subtitle {
+  margin-bottom: 40px;
+}
 </style>
+

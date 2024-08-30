@@ -16,20 +16,26 @@ import matplotlib
 import colorsys
 import pickle as pkl
 
+from models.resnet import resnet50, ResNet50_Weights
+import models.densenet as densenet
+
 matplotlib.use("Agg")  # 또는 다른 백엔드 선택
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Say hello")
-    parser.add_argument("--example_root", default="./examples", help="Path to D_probe")
+    parser.add_argument("--version", default="iitp", help="iitp, ccrc")
+    parser.add_argument("--pt_weight", default="/data/hyeonbae/project/ccrc-demo/backend/utils/densenet121_CXR_0.3M_mocov2.pth", help="Path to weight")
+    
+    parser.add_argument("--example_root", default="/data/hyeonbae/project/ccrc-demo/backend/examples", help="Path to D_probe")
     parser.add_argument(
-        "--heatmap_save_root", default="./heatmap", help="Path to saved img"
+        "--heatmap_save_root", default="/data/hyeonbae/project/ccrc-demo/backend/heatmap/med", help="Path to saved img"
     )
     parser.add_argument(
         "--num_example", default=1, type=int, help="# of examples to be used"
     )
-    parser.add_argument("--util_root", default="./utils", help="Path to utils")
-    parser.add_argument("--map_root", default="./heatmap_info", help="Path to utils")
+    parser.add_argument("--util_root", default="/data/hyeonbae/project/ccrc-demo/backend/utils", help="Path to utils")
+    parser.add_argument("--map_root", default="/data/hyeonbae/project/ccrc-demo/backend/heatmap_info/med", help="Path to utils")
 
     return parser.parse_args()
 
@@ -76,11 +82,26 @@ def concept_attribution_maps(
     gt=False,
 ):
 
-    with open(f"{args.util_root}/RN50_ImageNet_class_shap.pkl", "rb") as f:
-        shap_value = pkl.load(f)
-
-    with open(f"{args.util_root}/NM_img_val_80k_tem_adp_5_layer4.pkl", "rb") as f:
-        l4_concept = pkl.load(f)
+    if args.version == "iitp":
+        # shap 
+        shap_path = f"{args.util_root}/shap_nih_train_densenet121.pkl" # ccrc: f"{args.util_root}/RN50_ImageNet_class_shap.pkl"
+        with open(shap_path, "rb") as f:
+            shap_value = pkl.load(f)
+        # concept 
+        concept_path = f"{args.util_root}/mimic_nouns_40_base_tem_adp_95_penultimate.pkl" # ccrc: f"{args.util_root}/NM_img_val_80k_tem_adp_5_layer4.pkl"
+        with open(concept_path, "rb") as f:
+            l4_concept = pkl.load(f)
+            # l4_concept = l4_concept[0]
+        example_dir = '/data/hyeonbae/project/ccrc-demo/backend/images/med_dense_example_pen'
+    elif args.version == "ccrc":
+        # shap 
+        shap_path = f"{args.util_root}/RN50_ImageNet_class_shap.pkl"
+        with open(shap_path, "rb") as f:
+            shap_value = pkl.load(f)
+        # concept 
+        concept_path = f"{args.util_root}/NM_img_val_80k_tem_adp_5_layer4.pkl"
+        with open(concept_path, "rb") as f:
+            l4_concept = pkl.load(f)
 
     c_heatmap = []
     s_heatmap = []
@@ -113,9 +134,14 @@ def concept_attribution_maps(
 
             concepts.append(l4_concept[0][c_id])
             concepts.append(c_id)
-            directory_contents = os.listdir(
-                "./images/example_val_l4_top2/" + str(f"{c_id:04d}")
-            )
+            if args.version == 'ccrc':
+                directory_contents = os.listdir(
+                    "./images/example_val_l4_top2/" + str(f"{c_id:04d}")
+                )
+            elif args.version == 'iitp':
+                directory_contents = os.listdir(
+                    f"{example_dir}/images/" + str(f"{c_id:04d}")
+                )
             concepts.append(directory_contents)
             heatmap = feature_maps[:, :, c_id]
 
@@ -226,9 +252,16 @@ def concept_attribution_maps(
             sigma = np.percentile(feature_maps[:, :, c_id].flatten(), percentile)
             concepts.append(l4_concept[0][c_id])
             concepts.append(c_id)
-            directory_contents = os.listdir(
-                "./images/example_val_l4_top2/" + str(f"{c_id:04d}")
-            )
+
+            if args.version == 'ccrc':
+                directory_contents = os.listdir(
+                    "./images/example_val_l4_top2/" + str(f"{c_id:04d}")
+                )
+            elif args.version == 'iitp':
+                directory_contents = os.listdir(
+                    f"{example_dir}/images/" + str(f"{c_id:04d}")
+                )
+
             concepts.append(directory_contents)
             heatmap = heatmap * np.array(heatmap > sigma, np.float32)
 
@@ -261,10 +294,14 @@ def concept_attribution_maps(
         feature_maps = feature_maps.transpose(1, 2, 0)
         most_important_concepts = np.argsort(sample_shap)[::-1][:num_top_neuron]
         overall_heatmap = np.zeros((224, 224))
-        with open(
-            "./utils/imagenet_labels.txt", "r"
-        ) as f:  # directory of imagenet_labels.txt
-            words = (f.read()).split("\n")
+        if args.version == "ccrc":
+            with open(
+                "./utils/imagenet_labels.txt", "r"
+            ) as f:  # directory of imagenet_labels.txt
+                words = (f.read()).split("\n")
+        elif args.version == "iitp":
+            with open('/data/hyeonbae/project/ccrc-demo/backend/utils/nih_labels.txt', 'r') as f:
+                words = (f.read()).split("\n")
         concepts.append([words[predict]])
         temp_weight = []
         for i, c_id in enumerate(most_important_concepts):
@@ -304,24 +341,46 @@ def infer():
     args = parse_args()
 
     ## Load model ##
-    ##### ResNET50 #####
-    from models.resnet import resnet50, ResNet50_Weights
+    if args.version == "ccrc":
+        ##### ResNET50 #####
+        
+        weights = ResNet50_Weights.DEFAULT
+        model = resnet50(weights=weights)
+        model.eval()
+        featdim = 2048
 
-    weights = ResNet50_Weights.DEFAULT
-    model = resnet50(weights=weights)
-    model.eval()
-    featdim = 2048
-
-    transform = tv.transforms.Compose(
-        [
+        transform = tv.transforms.Compose([
             tv.transforms.Resize(256),
             tv.transforms.CenterCrop(224),
             tv.transforms.ToTensor(),
-            tv.transforms.Normalize(
-                mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-            ),
-        ]
-    )
+            tv.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ])
+        
+    elif args.version == "iitp":
+        ##### DenseNET121 #####
+        checkpoint = torch.load(args.pt_weight, map_location='cpu')
+        model = densenet.__dict__['densenet121'](num_classes=14)
+        # if layer == 'penultimate':
+        #     model.classifier = torch.nn.Identity()
+
+        if 'state_dict' in checkpoint.keys():
+            checkpoint_model = checkpoint['state_dict']
+        elif 'model' in checkpoint.keys():
+            checkpoint_model = checkpoint['model']
+        else:
+            checkpoint_model = checkpoint
+
+        msg = model.load_state_dict(checkpoint_model, strict=False)
+        print(f'Model weigth load : {msg}')
+        model.eval()
+        featdim = 1024
+
+        transform = tv.transforms.Compose([
+            tv.transforms.Resize(256),
+            tv.transforms.CenterCrop(224),
+            tv.transforms.ToTensor(),
+            tv.transforms.Normalize(mean=[0.5056, 0.5056, 0.5056], std=[0.252, 0.252, 0.252]),
+            ])
 
     os.makedirs(f"{args.map_root}", exist_ok=True)
 
@@ -396,4 +455,5 @@ def serve_sample_ovr():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    # app.run(debug=True)
+    infer()
