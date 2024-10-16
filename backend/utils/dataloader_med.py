@@ -297,7 +297,7 @@ class ChestX_ray14_bbox(Dataset):
 class ChestX_ray14_det(Dataset):
     def __init__(self, data_dir, file, augment, no_normalize_aug,
                  num_class=14, img_depth=3, heatmap_path=None,
-                 pretraining=False):
+                 pretraining=False, target_img = None):
         self.img_list = []
         self.box_list = []
         self.img_label = []
@@ -315,12 +315,21 @@ class ChestX_ray14_det(Dataset):
                     # boxPath = f'{data_dir}box/{lineItems["file_name"]}'
                     imageLabel = lineItems['syms']
                     imagePolygon = lineItems['polygons']
-                    self.img_list.append(imagePath)
-                    # self.box_list.append(boxPath)
-                    self.img_label.append(imageLabel)
-                    self.img_polygons.append(imagePolygon)
-                    self.img_name.append(lineItems['file_name'])
-                    self.box_mask.append(lineItems['boxes'])
+                    if target_img is not None:
+                        if lineItems['file_name'] in target_img:
+                            self.img_list.append(imagePath)
+                            # self.box_list.append(boxPath)
+                            self.img_label.append(imageLabel)
+                            self.img_polygons.append(imagePolygon)
+                            self.img_name.append(lineItems['file_name'])
+                            self.box_mask.append(lineItems['boxes'])
+                    else:
+                        self.img_list.append(imagePath)
+                        # self.box_list.append(boxPath)
+                        self.img_label.append(imageLabel)
+                        self.img_polygons.append(imagePolygon)
+                        self.img_name.append(lineItems['file_name'])
+                        self.box_mask.append(lineItems['boxes'])
 
         # with open(file, "r") as fileDescriptor:
         #     line = True
