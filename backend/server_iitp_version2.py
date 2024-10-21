@@ -16,36 +16,37 @@ import matplotlib
 import colorsys
 import pickle as pkl
 import pandas as pd
+import json
 
 from models.resnet import resnet50, ResNet50_Weights
 import models.densenet as densenet
 from utils.dataloader_med import Augmentation, ChestX_ray14, ChestX_ray14_det, ChestX_ray14_bbox
 matplotlib.use("Agg")  # 또는 다른 백엔드 선택
-
+# /Users/ameer/iitp-demo-code/ccrc-demo/backend
 def parse_args():
     parser = argparse.ArgumentParser(description="Say hello")
     parser.add_argument("--version", default="iitp", help="iitp, ccrc")
-    parser.add_argument("--pt_weight", default="/data/hyeonbae/project/ccrc-demo/backend/utils/densenet121_CXR_0.3M_mocov2.pth", help="Path to weight")
+    parser.add_argument("--pt_weight", default="/Users/ameer/iitp-demo-code/ccrc-demo/backend/utils/densenet121_CXR_0.3M_mocov2.pth", help="Path to weight")
     
-    # parser.add_argument("--example_root", default="/data/hyeonbae/project/ccrc-demo/backend/examples", help="Path to D_probe")
-    parser.add_argument("--example_root", default="/data/hyeonbae/project/ccrc-demo/backend/examples/medical_input/test_img", help="Path to D_probe")
-    # parser.add_argument("--example_root", default="/data/hyeonbae/project/ccrc-demo/backend/examples/medical_input/one_image", help="Path to D_probe")
-    # parser.add_argument("--example_root", default="/data/hyeonbae/project/ccrc-demo/backend/examples/medical_input/test_box", help="Path to D_probe")
+    # parser.add_argument("--example_root", default="/Users/ameer/iitp-demo-code/ccrc-demo/backend/examples", help="Path to D_probe")
+    parser.add_argument("--example_root", default="/Users/ameer/iitp-demo-code/ccrc-demo/backend/examples/medical_input/test_img", help="Path to D_probe")
+    # parser.add_argument("--example_root", default="/Users/ameer/iitp-demo-code/ccrc-demo/backend/examples/medical_input/one_image", help="Path to D_probe")
+    # parser.add_argument("--example_root", default="/Users/ameer/iitp-demo-code/ccrc-demo/backend/examples/medical_input/test_box", help="Path to D_probe")
     parser.add_argument(
-        "--heatmap_save_root", default="/data/hyeonbae/project/ccrc-demo/backend/heatmap/iitp_v2", help="Path to saved img"
+        "--heatmap_save_root", default="/Users/ameer/iitp-demo-code/ccrc-demo/backend/heatmap/iitp_v2", help="Path to saved img"
     )
     parser.add_argument(
         "--num_example", default=1, type=int, help="# of examples to be used"
     )
-    parser.add_argument("--util_root", default="/data/hyeonbae/project/ccrc-demo/backend/utils", help="Path to utils")
-    parser.add_argument("--map_root", default="/data/hyeonbae/project/ccrc-demo/backend/heatmap_info/med", help="Path to utils")
+    parser.add_argument("--util_root", default="/Users/ameer/iitp-demo-code/ccrc-demo/backend/utils", help="Path to utils")
+    parser.add_argument("--map_root", default="/Users/ameer/iitp-demo-code/ccrc-demo/backend/heatmap_info/med", help="Path to utils")
 
     # version IITP
-    parser.add_argument("--thrs", default="/data/hyeonbae/project/ccrc-demo/backend/utils/densenet121_thrs.csv", type=str, help="Path to threshold")
+    parser.add_argument("--thrs", default="/Users/ameer/iitp-demo-code/ccrc-demo/backend/utils/densenet121_thrs.csv", type=str, help="Path to threshold")
     # Image root (if image are not in Chest_Det test set(pre-defined set), visualize without bbox)
     # If image in Chest_Det test set, write "image_name.png", if not, write full path.
     # * Note, this code version is not considering not include chest_det test set.
-    parser.add_argument("--img_names", default="/data/hyeonbae/project/ccrc-demo/backend/img_name.txt", type=str, help="Path to threshold")
+    parser.add_argument("--img_names", default="/Users/ameer/iitp-demo-code/ccrc-demo/backend/img_name.txt", type=str, help="Path to threshold")
     return parser.parse_args()
 
 
@@ -101,7 +102,7 @@ def concept_attribution_maps(
         with open(concept_path, "rb") as f:
             l4_concept = pkl.load(f)
             # l4_concept = l4_concept[0]
-        example_dir = '/data/hyeonbae/project/ccrc-demo/backend/images/med_dense_example_pen'
+        example_dir = '/Users/ameer/iitp-demo-code/ccrc-demo/backend/images/med_dense_example_pen'
     elif args.version == "ccrc":
         # shap 
         shap_path = f"{args.util_root}/RN50_ImageNet_class_shap.pkl"
@@ -367,7 +368,7 @@ def concept_attribution_maps(
                     ) as f:  # directory of imagenet_labels.txt
                         words = (f.read()).split("\n")
                 elif args.version == "iitp":
-                    with open('/data/hyeonbae/project/ccrc-demo/backend/utils/nih_labels.txt', 'r') as f:
+                    with open('/Users/ameer/iitp-demo-code/ccrc-demo/backend/utils/nih_labels.txt', 'r') as f:
                         words = (f.read()).split("\n")
                 concepts.append([words[i]])
                 temp_weight = []
@@ -443,7 +444,7 @@ def infer():
 
     elif args.version == "iitp":
         args.threshold= load_threshold(args.thrs)
-        with open('/data/hyeonbae/project/ccrc-demo/backend/utils/nih_labels.txt', 'r') as f: 
+        with open('/Users/ameer/iitp-demo-code/ccrc-demo/backend/utils/nih_labels.txt', 'r') as f: 
             args.class_name = (f.read()).split('\n')
         ##### DenseNET121 #####
         checkpoint = torch.load(args.pt_weight, map_location='cpu')
@@ -472,8 +473,8 @@ def infer():
             img_names = f.readlines()
         img_names = [x.strip() for x in img_names]
 
-        split_path = '/data/hyeonbae/project/ccrc-demo/backend/utils/ChestX_Det_test.json'
-        # split_path = '/data/hyeonbae/project/ccrc-demo/backend/utils/ChestX_Det_test_one.json'
+        split_path = '/Users/ameer/iitp-demo-code/ccrc-demo/backend/utils/ChestX_Det_test.json'
+        # split_path = '/Users/ameer/iitp-demo-code/ccrc-demo/backend/utils/ChestX_Det_test_one.json'
         examples = ChestX_ray14_det(args.example_root, split_path, augment=transform, no_normalize_aug=no_normalize, num_class=14, target_img=img_names)
 
         sampler = torch.utils.data.SequentialSampler(examples)
@@ -507,54 +508,153 @@ def infer():
         alpha=0.8,
         gt=False,
     )
-    return concepts
 
+    # get img_label from examples
+    img_label = examples.get_img_label()
+
+    # get all the img_labels and assign them to the predictions list
+    predictions = []
+    for i in range(len(img_label[0])):
+        predictions.append(img_label[0][i])
+
+    return predictions , concepts
+
+
+# app = Flask(__name__)
+# CORS(app)
+
+
+# @app.route("/explain", methods=["POST"])
+# def explain():
+#     data = request.json
+#     if "imageData" in data:
+#         print("-----------------")
+#         image_data_base64 = data["imageData"]
+#         image_data = base64.b64decode(image_data_base64.split(",")[1])
+#         # 여기서 이미지 데이터를 처리하고 저장할 수 있습니다
+#         # 예를 들어, 파일로 저장하거나 다른 작업을 수행할 수 있습니다
+#         os.makedirs("./examples/0", exist_ok=True)
+#         with open("./examples/0/image.jpg", "bw") as f:
+#             f.write(image_data)
+#         return str(infer())
+#     else:
+#         return jsonify({"error": "No image data found"})
 
 app = Flask(__name__)
-CORS(app)
+# added by Hamza
+CORS(app, resources={r"/*": {"origins": "*"}})
 
+UPLOAD_FOLDER = './examples/0'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 @app.route("/explain", methods=["POST"])
 def explain():
-    data = request.json
-    if "imageData" in data:
-        print("-----------------")
-        image_data_base64 = data["imageData"]
-        image_data = base64.b64decode(image_data_base64.split(",")[1])
-        # 여기서 이미지 데이터를 처리하고 저장할 수 있습니다
-        # 예를 들어, 파일로 저장하거나 다른 작업을 수행할 수 있습니다
-        os.makedirs("./examples/0", exist_ok=True)
-        with open("./examples/0/image.jpg", "bw") as f:
-            f.write(image_data)
-        return str(infer())
-    else:
-        return jsonify({"error": "No image data found"})
+    response_data = {}
+    if 'image' not in request.files:
+        return jsonify({"error": "No image file found"}), 400
+    file = request.files['image']
+    # Ensure the file is a .png file
+    if file.filename == '' or not file.filename.lower().endswith('.png'):
+        return jsonify({"error": "Only .png files are allowed."}), 400
+    
+    args = parse_args()
+    args.img_names = file.filename
 
+    base_path = os.path.dirname(__file__)
 
-@app.route("/images/class_att")
-def serve_class_att():
-    # 이미지 파일을 static 폴더에서 찾아서 클라이언트에게 반환
-    return send_from_directory("./heatmap/", "Class_att.jpg")
+    img_name_path = os.path.join(base_path, 'img_name.txt')
+    
+    if not os.path.exists(img_name_path):
+        with open(img_name_path, "w") as f:
+            f.write(file.filename)
+    else:        
+        with open(img_name_path, "w") as f:
+            f.write(file.filename)
+    
+    # infer() function will now return the predictions and the total number of predictions
+    predictions, concepts = infer()
 
+    # Load the question IDs from the input JSONL file based on filename and predictions
+    report_input_path = os.path.join(base_path, 'reports', 'chest_DT_report_input.jsonl')
+    report_output_path = os.path.join(base_path, 'reports', 'chest_DT_report_output.jsonl')
 
-@app.route("/images/class_ovr")
-def serve_class_ovr():
-    # 이미지 파일을 static 폴더에서 찾아서 클라이언트에게 반환
-    return send_from_directory("./heatmap/", "Class_ovr.jpg")
+    # Load input JSONL data
+    with open(report_input_path, 'r') as f:
+        report_input_data = [json.loads(line) for line in f]
 
+    # Load output JSONL data
+    with open(report_output_path, 'r') as f:
+        report_output_data = [json.loads(line) for line in f]
 
-@app.route("/images/sample_att")
-def serve_sample_att():
-    # 이미지 파일을 static 폴더에서 찾아서 클라이언트에게 반환
-    return send_from_directory("./heatmap/", "sample_att.jpg")
+    # Find the relevant question ids from the input file based on image name and predictions
+    question_ids = []
 
+    # Loop through each entry in the report_input_data
+    for entry in report_input_data:
+        if entry["image"] == file.filename:
+            # Loop through the predictions and compare with entry["prediction"]
+            for prediction in predictions:
+                if prediction == entry["prediction"]:
+                    question_ids.append(entry["question_id"])
 
-@app.route("/images/sample_ovr")
-def serve_sample_ovr():
-    # 이미지 파일을 static 폴더에서 찾아서 클라이언트에게 반환
-    return send_from_directory("./heatmap/", "sample_ovr.jpg")
+    # Extract the report text from the output file based on question ids
+    reports = []
+    for question_id in question_ids:
+        for entry in report_output_data:
+            if entry["question_id"] == question_id:
+                reports.append(entry["text"])
+
+    # log the concepts 
+    print(concepts)
+    print(type(concepts))
+
+    concepts_str = ""
+    concept_list = []
+    concept_number = 1
+
+    # Iterate through the concepts list
+    for concept in concepts:
+        # break after 2 concepts
+        if concept_number > 2:
+            break
+        # Check if the element is a list and its contents are not image filenames
+        if isinstance(concept, list) and all(not str(item).endswith('.jpg') for item in concept):
+            # Join the list elements into a string
+            concept_list.append(concept)
+            joined_concept = ", ".join(concept)
+            # Append the concept number and the joined list to the final string
+            concepts_str += f"concept {concept_number}: {joined_concept} \n\n"
+            concept_number += 1
+
+    print(concepts_str)
+
+    response_data = {
+        "pred": predictions[0],
+        "report": reports[0],
+        "exp-pc-1": f"http://127.0.0.1:5000/images/{file.filename.split('.')[0]}_{prediction}_Class_ovr.jpg",
+        "input_image": f"http://127.0.0.1:5000/input_img/{file.filename}",
+        "concept1": concept_list[0],
+        "concept2": concept_list[1]
+
+    }
+    return jsonify(response_data)
+
+from flask import send_from_directory
+
+# Assuming your images are stored in a directory named 'heatmap'
+@app.route('/images/<path:filename>')
+def serve_image(filename):
+    base_path = "/Users/ameer/iitp-demo-code/ccrc-demo/backend/heatmap/iitp_v2"
+    return send_from_directory(base_path, filename)
+
+# /Users/ameer/iitp-demo-code/ccrc-demo/backend/examples/medical_input/test_box
+
+@app.route('/input_img/<path:filename>')
+def serve_input_image(filename):
+    base_path = "/Users/ameer/iitp-demo-code/ccrc-demo/backend/examples/medical_input/test_box"
+    return send_from_directory(base_path, filename)
 
 
 if __name__ == "__main__":
-    # app.run(debug=True)
-    infer()
+    app.run(debug=True)
+    #infer()

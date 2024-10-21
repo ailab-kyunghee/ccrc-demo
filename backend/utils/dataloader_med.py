@@ -355,7 +355,11 @@ class ChestX_ray14_det(Dataset):
 
     def __len__(self):
         return len(self.img_list)
-
+    
+    # added by Hamza
+    def get_img_label(self):
+        return self.img_label
+    
     def __getitem__(self, index):
 
         file = self.img_list[index]

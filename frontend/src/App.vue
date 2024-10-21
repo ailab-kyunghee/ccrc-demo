@@ -3,7 +3,7 @@
 </template>
 
 <script>
-import Video from './components/Video.vue'
+import Video from './components/VideoIITP.vue'
 
 export default {
   name: 'App',
