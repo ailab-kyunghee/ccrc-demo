@@ -1,0 +1,41 @@
+# Use an official Ubuntu as a parent image
+FROM ubuntu:20.04
+
+# Set environment variable to avoid prompts during package installations
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install essential packages
+RUN apt-get update && apt-get install -y \
+    python3.8 \
+    python3-pip \
+    git \
+    wget \
+    libgl1-mesa-glx \
+    && apt-get clean
+
+# Set the default Python version to Python 3.8
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
+
+# Install pip requirements for MedCLIP and Flask
+RUN pip install --upgrade pip
+
+# Install MedCLIP directly from the GitHub repository
+RUN pip install git+https://github.com/RyanWangZf/MedCLIP.git
+
+# Install Flask and other required packages
+RUN pip install flask
+
+# install FAISS-GPU
+RUN pip install faiss-gpu
+
+# Create a working directory
+WORKDIR /workspace
+
+# Copy your project files into the working directory
+COPY . /workspace
+
+# Expose the Flask app port
+EXPOSE 5000
+
+# Define the command to run the Flask app
+CMD ["python", "/workspace/app.py"]

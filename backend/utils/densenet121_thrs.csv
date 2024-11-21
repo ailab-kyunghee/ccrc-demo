@@ -1,0 +1,15 @@
+label,bestthr
+Atelectasis,0.230785
+Cardiomegaly,0.19982076
+Effusion,0.2767876
+Infiltration,0.17876191
+Mass,0.2042198
+Nodule,0.16330326
+Pneumonia,0.06151885
+Pneumothorax,0.14093328
+Consolidation,0.14050831
+Edema,0.06895256
+Emphysema,0.20341352
+Fibrosis,0.109138325
+Pleural thickening,0.102529496
+Hernia,0.085223936

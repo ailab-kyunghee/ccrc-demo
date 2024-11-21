@@ -1,0 +1,24 @@
+# Exclude compiled Python files
+*.pyc
+
+# Exclude large files
+*.ckpt
+*.pth
+*.zip
+*.bin
+*.jsonl
+*.json
+*.pkl
+*.Identifier
+*.gz
+
+# Exclude directories
+node_modules/
+.venv/
+datastore/
+examples/
+heatmaps/
+heatmap_info/
+images/
+xai-demo/
+medclip/datastore/
